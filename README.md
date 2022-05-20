@@ -1,22 +1,11 @@
-
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/support-ukraine.svg?t=1" />](https://supportukrainenow.org)
-
-# Simply define the permission in the filament resource.
+# Simply define the permissions in the filament resource.
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/z3d0x/filament-simple-permissions.svg?style=flat-square)](https://packagist.org/packages/z3d0x/filament-simple-permissions)
 [![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/z3d0x/filament-simple-permissions/run-tests?label=tests)](https://github.com/z3d0x/filament-simple-permissions/actions?query=workflow%3Arun-tests+branch%3Amain)
 [![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/z3d0x/filament-simple-permissions/Check%20&%20fix%20styling?label=code%20style)](https://github.com/z3d0x/filament-simple-permissions/actions?query=workflow%3A"Check+%26+fix+styling"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/z3d0x/filament-simple-permissions.svg?style=flat-square)](https://packagist.org/packages/z3d0x/filament-simple-permissions)
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
-
-## Support us
-
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/filament-simple-permissions.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/filament-simple-permissions)
-
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
-
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
+Easily define permissions for [Filament](https://github.com/laravel-filament/filament) Resources & Relation Managers 
 
 ## Installation
 
@@ -25,44 +14,80 @@ You can install the package via composer:
 ```bash
 composer require z3d0x/filament-simple-permissions
 ```
-
-You can publish and run the migrations with:
-
-```bash
-php artisan vendor:publish --tag="filament-simple-permissions-migrations"
-php artisan migrate
-```
-
-You can publish the config file with:
-
-```bash
-php artisan vendor:publish --tag="filament-simple-permissions-config"
-```
-
-This is the contents of the published config file:
-
-```php
-return [
-];
-```
-
-Optionally, you can publish the views using
-
-```bash
-php artisan vendor:publish --tag="filament-simple-permissions-views"
-```
+This package does not require any additional configuration after installation
 
 ## Usage
 
+This package comes with two traits `HasResourcePermissions` and `HasRelationManagerPermissions`, which can be used in Filament's Resources and RelationManagers respectively.
+
+To use simply use the trait in your Resource/RelationManger and define your permissions.
+
+### Resource Example
 ```php
-$filamentSimplePermissions = new Z3d0X\FilamentSimplePermissions();
-echo $filamentSimplePermissions->echoPhrase('Hello, Z3d0X!');
+//UserResource.php
+use Z3d0X\FilamentSimplePermissions\Concerns\HasResourcePermissions;
+
+class UserResource extends Resource
+{
+    use HasResourcePermissions;
+
+    protected static array $permissions = [
+        'viewAny' => 'access-users',
+        'view' => 'access-users',
+        'create' => 'create-users',
+        'update' => 'update-users',
+        'delete' => ['update-users', 'delete-stuff'], //use an array if multiple permissions are needed
+        'deleteAny' => false, //also supports boolean, to allow/disallow for all users
+    ];
+}
 ```
 
-## Testing
+### RelationManager Example
+```php
+//PostsRelationManager.php
+use Z3d0X\FilamentSimplePermissions\Concerns\HasRelationManagerPermissions;
 
-```bash
-composer test
+class PostsRelationManager extends HasManyRelationManager
+{
+    use HasRelationManagerPermissions;
+
+    protected static array $permissions = [
+        'create' => 'create-posts',
+        'update' => 'update-posts',
+        'delete' => ['update-posts', 'delete-stuff'], //use an array if multiple permissions are needed
+        'deleteAny' => false, //also supports boolean, to allow/disallow for all users
+
+        //Supports relation manager specific actions.
+        'viewForRecord' => 'access-posts',
+        'associate' => 'update-posts',
+        'dissociate' => 'update-posts',
+        'dissociateAny' => false,
+    ];
+}
+```
+
+## Advanced Usage
+
+For advanced usage, it is possible to define a static `getPermissions()` method, instead of `$permissions` property
+```php
+//PostsRelationManager.php
+use Z3d0X\FilamentSimplePermissions\Concerns\HasRelationManagerPermissions;
+use Illuminate\Database\Eloquent\Model;
+
+class PostsRelationManager extends HasManyRelationManager
+{
+    use HasRelationManagerPermissions;
+
+    protected static function getPermissions(): array
+    {
+        return [
+            'viewForRecord' => fn (Model $ownerRecord) => $ownerRecord->user_id === auth()->id(),
+            'update' => function (Model $record) {
+                return $record->user_id === auth()->id();
+            },
+        ];
+    }
+}
 ```
 
 ## Changelog
