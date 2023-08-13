@@ -1,3 +1,6 @@
+> [!WARNING]
+> This package is no longer maintained
+
 # Simply define the permissions in the filament resource.
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/z3d0x/filament-simple-permissions.svg?style=flat-square)](https://packagist.org/packages/z3d0x/filament-simple-permissions)
